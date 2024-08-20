@@ -1,4 +1,4 @@
 @src/=src/
-@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
-forge-std/=node_modules/forge-std/
-mock-tokens/=node_modules/mock-tokens/
+@openzeppelin/=lib/openzeppelin-contracts/
+forge-std/=lib/forge-std/
+mock-tokens/=lib/mock-tokens/
