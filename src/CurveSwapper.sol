@@ -26,6 +26,68 @@ contract CurveSwapper is ISwapper {
         tokenB = WETH;
     }
 
+    function previewAtoB(uint256 amountA) public view virtual override returns (uint256 amountOut) {
+        address[11] memory routes = [
+            DAI,
+            threePool,
+            address(USDC),
+            tricryptoPool,
+            WETH,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        uint256[5][5] memory swapParams = [
+            [uint256(0), 1, 1, 1, 3],
+            [uint256(0), 2, 1, 3, 3],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0]
+        ];
+        address[5] memory empty = [
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        amountOut = curveRouter.get_dy(routes, swapParams, amountA, empty);
+    }
+
+    function previewBtoA(uint256 amountB) public view virtual override returns (uint256 amountOut) {
+        address[11] memory routes = [
+            WETH,
+            tricryptoPool,
+            address(USDC),
+            threePool,
+            DAI,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        uint256[5][5] memory swapParams = [
+            [uint256(2), 0, 1, 3, 3],
+            [uint256(1), 0, 1, 1, 3],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0]
+        ];
+        address[5] memory empty = [
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        amountOut = curveRouter.get_dy(routes, swapParams, amountB, empty);
+    }
+
     function swapFromAtoB(
         uint256 amountA,
         uint256 minAmountB,
@@ -65,6 +127,7 @@ contract CurveSwapper is ISwapper {
             0x0000000000000000000000000000000000000000,
             0x0000000000000000000000000000000000000000
         ];
+
         IERC20(DAI).approve(address(curveRouter), amountA);
         uint256 amountOut = curveRouter.exchange(routes, swapParams, amountA, minAmountB, empty, receiver);
         emit SwapFromAToB(msg.sender, receiver, amountA, amountOut);
