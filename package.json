@@ -6,10 +6,6 @@
     "name": "Ned Albo",
     "url": "https://github.com/0xNedAlbo"
   },
-  "dependencies": {
-    "@openzeppelin/contracts": "^5.0.1",
-    "mock-tokens": "github:0xNedAlbo/mock-tokens"
-  },
   "devDependencies": {
     "forge-std": "github:foundry-rs/forge-std#v1.8.1",
     "prettier": "^3.0.0",
