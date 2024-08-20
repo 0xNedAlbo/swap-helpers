@@ -6,7 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ICurveRouterNG } from "@src/interfaces/curve/ICurveRouterNG.sol";
 import { ISwapper } from "@src/interfaces/ISwapper.sol";
 
-contract CurveSwapper is ISwapper {
+contract EthSwapper is ISwapper {
     using SafeERC20 for IERC20;
 
     address public immutable DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;

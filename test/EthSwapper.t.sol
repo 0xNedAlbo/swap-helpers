@@ -10,13 +10,13 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IAggregator } from "@src/interfaces/chainlink/IAggregator.sol";
 
 import { ISwapper } from "@src/interfaces/ISwapper.sol";
-import { CurveSwapper } from "@src/CurveSwapper.sol";
+import { EthSwapper } from "@src/EthSwapper.sol";
 import { SwapMath } from "@src/utils/SwapMath.sol";
 
 contract CurveSwapperTest is Test {
     using Math for uint256;
 
-    ISwapper public curveSwap;
+    ISwapper public ethSwap;
 
     address public DAI_WHALE = 0xc2fE57936927D663937D83FD7D9a3C8Dbd233556;
     address public user;
@@ -32,7 +32,7 @@ contract CurveSwapperTest is Test {
     }
 
     function setUp_swapper() public {
-        curveSwap = new CurveSwapper();
+        ethSwap = new EthSwapper();
     }
 
     function setUp_user() public {
@@ -40,14 +40,14 @@ contract CurveSwapperTest is Test {
     }
 
     modifier withCurveRouter() {
-        require(curveSwap.tokenA() == address(DAI), "Token A not DAI");
-        require(curveSwap.tokenB() == address(WETH), "Token B not WETH");
+        require(ethSwap.tokenA() == address(DAI), "Token A not DAI");
+        require(ethSwap.tokenB() == address(WETH), "Token B not WETH");
         _;
     }
 
     function test_previewAtoB() public view withCurveRouter {
         uint256 daiAmount = 300_000 ether;
-        uint256 wethAmount = curveSwap.previewAtoB(daiAmount);
+        uint256 wethAmount = ethSwap.previewAtoB(daiAmount);
         require(wethAmount > 0);
         uint256 amountExpected = daiAmount * 10 ** 8 / uint256(chainlink.latestAnswer());
         require(SwapMath.slippage(amountExpected, wethAmount) < 5_000_000, "slippage");
@@ -55,7 +55,7 @@ contract CurveSwapperTest is Test {
 
     function test_previewBtoA() public view withCurveRouter {
         uint256 wethAmount = 10 ether;
-        uint256 daiAmount = curveSwap.previewBtoA(wethAmount);
+        uint256 daiAmount = ethSwap.previewBtoA(wethAmount);
         require(daiAmount > 0);
         uint256 amountExpected = wethAmount * uint256(chainlink.latestAnswer()) / 10 ** 8;
         require(SwapMath.slippage(amountExpected, daiAmount) < 5_000_000, "slippage");
@@ -68,8 +68,8 @@ contract CurveSwapperTest is Test {
         IERC20(DAI).transfer(user, daiAmount);
         require(WETH.balanceOf(user) == 0);
         vm.startPrank(user);
-        DAI.approve(address(curveSwap), daiAmount);
-        curveSwap.swapFromAtoB(daiAmount, 1, user);
+        DAI.approve(address(ethSwap), daiAmount);
+        ethSwap.swapFromAtoB(daiAmount, 1, user);
         vm.stopPrank();
         require(WETH.balanceOf(user) > 0);
     }
@@ -80,8 +80,8 @@ contract CurveSwapperTest is Test {
         vm.deal(user, wethAmout);
         vm.startPrank(user);
         WETH.deposit{ value: wethAmout }();
-        WETH.approve(address(curveSwap), wethAmout);
-        curveSwap.swapFromBtoA(wethAmout, 1, user);
+        WETH.approve(address(ethSwap), wethAmout);
+        ethSwap.swapFromBtoA(wethAmout, 1, user);
         vm.stopPrank();
         require(DAI.balanceOf(user) > 0);
     }
