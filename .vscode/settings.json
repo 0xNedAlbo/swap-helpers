@@ -7,8 +7,8 @@
   },
   "solidity.formatter": "forge",
   "workbench.colorCustomizations": {
-    "activityBar.background": "#560E42",
-    "titleBar.activeBackground": "#78145D",
+    "activityBar.background": "#0e562d",
+    "titleBar.activeBackground": "#274b01",
     "titleBar.activeForeground": "#FEFCFE"
   }
 }
