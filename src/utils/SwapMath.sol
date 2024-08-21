@@ -4,13 +4,13 @@ pragma solidity >=0.8.18;
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 library SwapMath {
-    function sellSlippage(uint256 expected, uint256 actual) public pure returns (uint256 /* million bps */ ) {
+    function sellSlippage(uint256 expected, uint256 actual, uint256 maxBps) public pure returns (uint256) {
         if (actual >= expected) return 0;
-        return (expected - actual) * 100_000_000 / expected;
+        return (expected - actual) * maxBps / expected;
     }
 
-    function buySlippage(uint256 expected, uint256 actual) public pure returns (uint256 /* million bps */ ) {
+    function buySlippage(uint256 expected, uint256 actual, uint256 maxBps) public pure returns (uint256) {
         if (actual <= expected) return 0;
-        return (actual - expected) * 100_000_000 / expected;
+        return (actual - expected) * maxBps / expected;
     }
 }
