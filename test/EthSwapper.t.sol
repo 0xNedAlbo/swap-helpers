@@ -2,7 +2,7 @@
 pragma solidity >=0.8.18;
 
 import { console } from "forge-std/src/console.sol";
-import { Test } from "forge-std/src/test.sol";
+import { StdCheats, Test } from "forge-std/src/test.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IWETH } from "mock-tokens/src/interfaces/IWETH.sol";
@@ -13,12 +13,11 @@ import { ISwapper } from "@src/interfaces/ISwapper.sol";
 import { EthSwapper } from "@src/EthSwapper.sol";
 import { SwapMath } from "@src/utils/SwapMath.sol";
 
-contract CurveSwapperTest is Test {
+contract CurveSwapperTest is StdCheats, Test {
     using Math for uint256;
 
     ISwapper public ethSwap;
 
-    address public DAI_WHALE = 0xc2fE57936927D663937D83FD7D9a3C8Dbd233556;
     address public user;
 
     IERC20 public DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
@@ -45,44 +44,88 @@ contract CurveSwapperTest is Test {
         _;
     }
 
-    function test_previewAtoB() public view withCurveRouter {
+    function test_previewSellDai() public view withCurveRouter {
         uint256 daiAmount = 300_000 ether;
-        uint256 wethAmount = ethSwap.previewAtoB(daiAmount);
+        uint256 wethAmount = ethSwap.previewSellA(daiAmount);
         require(wethAmount > 0);
         uint256 amountExpected = daiAmount * 10 ** 8 / uint256(chainlink.latestAnswer());
-        require(SwapMath.slippage(amountExpected, wethAmount) < 5_000_000, "slippage");
+        require(SwapMath.sellSlippage(amountExpected, wethAmount) < 5_000_000, "slippage");
     }
 
-    function test_previewBtoA() public view withCurveRouter {
+    function test_previewSellWeth() public view withCurveRouter {
         uint256 wethAmount = 10 ether;
-        uint256 daiAmount = ethSwap.previewBtoA(wethAmount);
+        uint256 daiAmount = ethSwap.previewSellB(wethAmount);
         require(daiAmount > 0);
         uint256 amountExpected = wethAmount * uint256(chainlink.latestAnswer()) / 10 ** 8;
-        require(SwapMath.slippage(amountExpected, daiAmount) < 5_000_000, "slippage");
+        require(SwapMath.sellSlippage(amountExpected, daiAmount) < 5_000_000, "slippage");
     }
 
-    function test_swapDaiToWeth() public withCurveRouter {
+    function test_previewBuyDai() public view withCurveRouter {
         uint256 daiAmount = 300_000 ether;
-        require(DAI.balanceOf(DAI_WHALE) > daiAmount, "DAI whale has not enough funds");
-        vm.prank(DAI_WHALE);
-        IERC20(DAI).transfer(user, daiAmount);
+        uint256 wethAmount = ethSwap.previewBuyA(daiAmount);
+        require(wethAmount > 0);
+        uint256 amountExpected = daiAmount * 10 ** 8 / uint256(chainlink.latestAnswer());
+        uint256 slippage = SwapMath.buySlippage(amountExpected, wethAmount);
+        require(slippage < 5_000_000, "slippage");
+    }
+
+    function test_previewBuyWeth() public view withCurveRouter {
+        uint256 wethAmount = 10 ether;
+        uint256 daiAmount = ethSwap.previewBuyB(wethAmount);
+        require(daiAmount > 0);
+        uint256 amountExpected = wethAmount * uint256(chainlink.latestAnswer()) / 10 ** 8;
+        require(SwapMath.buySlippage(amountExpected, daiAmount) < 5_000_000, "slippage");
+    }
+
+    function test_sellDai() public withCurveRouter {
+        uint256 daiAmount = 300_000 ether;
+        deal(address(DAI), user, daiAmount);
         require(WETH.balanceOf(user) == 0);
         vm.startPrank(user);
         DAI.approve(address(ethSwap), daiAmount);
-        ethSwap.swapFromAtoB(daiAmount, 1, user);
+        ethSwap.sellA(daiAmount, 1, user);
         vm.stopPrank();
         require(WETH.balanceOf(user) > 0);
     }
 
-    function test_wethToDai() public withCurveRouter {
+    function test_sellWeth() public withCurveRouter {
         require(DAI.balanceOf(user) == 0);
         uint256 wethAmout = 10 ether;
         vm.deal(user, wethAmout);
         vm.startPrank(user);
         WETH.deposit{ value: wethAmout }();
         WETH.approve(address(ethSwap), wethAmout);
-        ethSwap.swapFromBtoA(wethAmout, 1, user);
+        ethSwap.sellB(wethAmout, 1, user);
         vm.stopPrank();
         require(DAI.balanceOf(user) > 0);
+    }
+
+    function test_buyDai() public withCurveRouter {
+        uint256 daiAmount = 300_000 ether;
+        require(DAI.balanceOf(user) == 0);
+        vm.startPrank(user);
+        uint256 wethAmount = ethSwap.previewBuyA(daiAmount);
+        deal(user, wethAmount);
+        WETH.deposit{ value: wethAmount }();
+        WETH.approve(address(ethSwap), wethAmount);
+        uint256 actualAmount = ethSwap.buyA(daiAmount, wethAmount, user);
+        vm.stopPrank();
+        require(DAI.balanceOf(user) > 0);
+        uint256 slippage = SwapMath.buySlippage(daiAmount, actualAmount);
+        require(slippage < 5_000_000, "buy slippage");
+    }
+
+    function test_buyWeth() public withCurveRouter {
+        uint256 wethAmount = 10 ether;
+        require(WETH.balanceOf(user) == 0);
+        uint256 daiAmount = ethSwap.previewBuyB(wethAmount);
+        deal(address(DAI), user, daiAmount);
+        vm.startPrank(user);
+        DAI.approve(address(ethSwap), daiAmount);
+        uint256 actualAmount = ethSwap.buyB(wethAmount, daiAmount, user);
+        vm.stopPrank();
+        require(WETH.balanceOf(user) > 0);
+        uint256 slippage = SwapMath.buySlippage(wethAmount, actualAmount);
+        require(slippage < 5_000_000, "buy slippage");
     }
 }

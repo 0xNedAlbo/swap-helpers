@@ -26,7 +26,7 @@ contract EthSwapper is ISwapper {
         tokenB = WETH;
     }
 
-    function previewAtoB(uint256 amountA) public view virtual override returns (uint256 amountOut) {
+    function previewSellA(uint256 amountA) public view virtual override returns (uint256 amountOut) {
         address[11] memory routes = [
             DAI,
             threePool,
@@ -57,7 +57,7 @@ contract EthSwapper is ISwapper {
         amountOut = curveRouter.get_dy(routes, swapParams, amountA, empty);
     }
 
-    function previewBtoA(uint256 amountB) public view virtual override returns (uint256 amountOut) {
+    function previewSellB(uint256 amountB) public view virtual override returns (uint256 amountOut) {
         address[11] memory routes = [
             WETH,
             tricryptoPool,
@@ -88,16 +88,7 @@ contract EthSwapper is ISwapper {
         amountOut = curveRouter.get_dy(routes, swapParams, amountB, empty);
     }
 
-    function swapFromAtoB(
-        uint256 amountA,
-        uint256 minAmountB,
-        address receiver
-    )
-        public
-        virtual
-        override
-        returns (uint256)
-    {
+    function sellA(uint256 amountA, uint256 minAmountB, address receiver) public virtual override returns (uint256) {
         IERC20(DAI).safeTransferFrom(msg.sender, address(this), amountA);
         address[11] memory routes = [
             DAI,
@@ -134,16 +125,7 @@ contract EthSwapper is ISwapper {
         return amountOut;
     }
 
-    function swapFromBtoA(
-        uint256 amountB,
-        uint256 minAmountA,
-        address receiver
-    )
-        public
-        virtual
-        override
-        returns (uint256)
-    {
+    function sellB(uint256 amountB, uint256 minAmountA, address receiver) public virtual override returns (uint256) {
         IERC20(WETH).safeTransferFrom(msg.sender, address(this), amountB);
         address[11] memory routes = [
             WETH,
@@ -165,15 +147,6 @@ contract EthSwapper is ISwapper {
             [uint256(0), 0, 0, 0, 0],
             [uint256(0), 0, 0, 0, 0]
         ];
-        /*
-        address[5] memory pools = [
-            tricryptoPool,
-            threePool,
-            0x0000000000000000000000000000000000000000,
-            0x0000000000000000000000000000000000000000,
-            0x0000000000000000000000000000000000000000
-        ];
-        */
         address[5] memory empty = [
             0x0000000000000000000000000000000000000000,
             0x0000000000000000000000000000000000000000,
@@ -181,19 +154,113 @@ contract EthSwapper is ISwapper {
             0x0000000000000000000000000000000000000000,
             0x0000000000000000000000000000000000000000
         ];
-        /*
-        amountOut = curveRouter.get_dy(
-            routes,
-            swapParams,
-            amountB,
-            pools,
-            empty,
-            empty
-        );
-        */
         IERC20(WETH).approve(address(curveRouter), amountB);
         uint256 amountOut = curveRouter.exchange(routes, swapParams, amountB, minAmountA, empty, receiver);
         emit SwapFromAToB(msg.sender, receiver, amountB, amountOut);
         return amountOut;
+    }
+
+    function previewBuyA(uint256 amountA) public view override returns (uint256 amountIn) {
+        address[11] memory routes = [
+            WETH,
+            tricryptoPool,
+            address(USDC),
+            threePool,
+            DAI,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        uint256[5][5] memory swapParams = [
+            [uint256(2), 0, 1, 3, 3],
+            [uint256(1), 0, 1, 1, 3],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0]
+        ];
+        address[5] memory pools = [
+            tricryptoPool,
+            threePool,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        address[5] memory empty = [
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        amountIn = curveRouter.get_dx(routes, swapParams, amountA, pools, empty, empty);
+    }
+
+    function previewBuyB(uint256 amountB) public view override returns (uint256 amountIn) {
+        address[11] memory routes = [
+            DAI,
+            threePool,
+            address(USDC),
+            tricryptoPool,
+            WETH,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        uint256[5][5] memory swapParams = [
+            [uint256(0), 1, 1, 1, 3],
+            [uint256(0), 2, 1, 3, 3],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0],
+            [uint256(0), 0, 0, 0, 0]
+        ];
+        address[5] memory pools = [
+            threePool,
+            tricryptoPool,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        address[5] memory empty = [
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000,
+            0x0000000000000000000000000000000000000000
+        ];
+        amountIn = curveRouter.get_dx(routes, swapParams, amountB, pools, empty, empty);
+    }
+
+    function buyA(
+        uint256 amountA,
+        uint256 maxAmountB,
+        address receiver
+    )
+        external
+        override
+        returns (uint256 amountOut)
+    {
+        uint256 amountIn = previewBuyA(amountA);
+        require(amountIn <= maxAmountB, "Too much slippage");
+        amountOut = sellB(amountIn, 1, receiver);
+    }
+
+    function buyB(
+        uint256 amountB,
+        uint256 maxAmountA,
+        address receiver
+    )
+        external
+        override
+        returns (uint256 amountOut)
+    {
+        uint256 amountIn = previewBuyB(amountB);
+        require(amountIn <= maxAmountA, "Too much slippage");
+        amountOut = sellA(amountIn, 1, receiver);
     }
 }
