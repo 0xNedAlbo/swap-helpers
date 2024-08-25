@@ -13,7 +13,7 @@ import { ISwapper } from "@src/interfaces/ISwapper.sol";
 import { EthSwapper } from "@src/EthSwapper.sol";
 import { SwapMath } from "@src/utils/SwapMath.sol";
 
-contract CurveSwapperTest is StdCheats, Test {
+contract EthSwapperTest is StdCheats, Test, SwapMath {
     using Math for uint256;
 
     ISwapper public ethSwap;
@@ -49,7 +49,7 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 wethAmount = ethSwap.previewSellA(daiAmount);
         require(wethAmount > 0);
         uint256 amountExpected = daiAmount * 10 ** 8 / uint256(chainlink.latestAnswer());
-        require(SwapMath.sellSlippage(amountExpected, wethAmount) < 5_000_000, "slippage");
+        sellSlippage(amountExpected, wethAmount, 5_000_000);
     }
 
     function test_previewSellWeth() public view withCurveRouter {
@@ -57,7 +57,7 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 daiAmount = ethSwap.previewSellB(wethAmount);
         require(daiAmount > 0);
         uint256 amountExpected = wethAmount * uint256(chainlink.latestAnswer()) / 10 ** 8;
-        require(SwapMath.sellSlippage(amountExpected, daiAmount) < 5_000_000, "slippage");
+        sellSlippage(amountExpected, daiAmount, 5_000_000);
     }
 
     function test_previewBuyDai() public view withCurveRouter {
@@ -65,8 +65,7 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 wethAmount = ethSwap.previewBuyA(daiAmount);
         require(wethAmount > 0);
         uint256 amountExpected = daiAmount * 10 ** 8 / uint256(chainlink.latestAnswer());
-        uint256 slippage = SwapMath.buySlippage(amountExpected, wethAmount);
-        require(slippage < 5_000_000, "slippage");
+        buySlippage(amountExpected, wethAmount, 5_000_000);
     }
 
     function test_previewBuyWeth() public view withCurveRouter {
@@ -74,7 +73,7 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 daiAmount = ethSwap.previewBuyB(wethAmount);
         require(daiAmount > 0);
         uint256 amountExpected = wethAmount * uint256(chainlink.latestAnswer()) / 10 ** 8;
-        require(SwapMath.buySlippage(amountExpected, daiAmount) < 5_000_000, "slippage");
+        buySlippage(amountExpected, daiAmount, 5_000_000);
     }
 
     function test_sellDai() public withCurveRouter {
@@ -111,8 +110,7 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 actualAmount = ethSwap.buyA(daiAmount, wethAmount, user);
         vm.stopPrank();
         require(DAI.balanceOf(user) > 0);
-        uint256 slippage = SwapMath.buySlippage(daiAmount, actualAmount);
-        require(slippage < 5_000_000, "buy slippage");
+        buySlippage(daiAmount, actualAmount, 5_000_000);
     }
 
     function test_buyWeth() public withCurveRouter {
@@ -125,7 +123,6 @@ contract CurveSwapperTest is StdCheats, Test {
         uint256 actualAmount = ethSwap.buyB(wethAmount, daiAmount, user);
         vm.stopPrank();
         require(WETH.balanceOf(user) > 0);
-        uint256 slippage = SwapMath.buySlippage(wethAmount, actualAmount);
-        require(slippage < 5_000_000, "buy slippage");
+        buySlippage(wethAmount, actualAmount, 5_000_000);
     }
 }

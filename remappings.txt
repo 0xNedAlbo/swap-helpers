@@ -1,4 +1,5 @@
 @src/=src/
 @openzeppelin/=lib/openzeppelin-contracts/
+@uniswap/v3-core/=lib/v3-core/
 forge-std/=lib/forge-std/
 mock-tokens/=lib/mock-tokens/
