@@ -7,3 +7,6 @@
 [submodule "lib/mock-tokens"]
 	path = lib/mock-tokens
 	url = https://github.com/0xNedAlbo/mock-tokens
+[submodule "lib/v3-core"]
+	path = lib/v3-core
+	url = https://github.com/Uniswap/v3-core
