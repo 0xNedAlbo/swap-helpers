@@ -11,7 +11,7 @@ import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/SwapMath.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
-abstract contract UniswapV3Helper is ISwapHelper {
+contract UniswapV3Helper is ISwapHelper {
     using SafeERC20 for IERC20;
 
     IUniswapV3Pool public pool;

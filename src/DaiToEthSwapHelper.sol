@@ -9,11 +9,6 @@ contract DaiToEthSwapHelper is UniswapV3Helper {
     address immutable DAI;
     address immutable WETH;
 
-    uint256 public token0FuzzMin = 0;
-    uint256 public token0FuzzMax = 0;
-    uint256 public token1FuzzMin = 0;
-    uint256 public token1FuzzMax = 0;
-
     constructor() UniswapV3Helper(POOL_ADDRESS) {
         DAI = pool.token0();
         WETH = pool.token1();

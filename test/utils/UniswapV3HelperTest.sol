@@ -15,6 +15,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
 
     UniswapV3Helper public swapHelper;
 
+    uint256 public forkId;
     address public user;
     IUniswapV3Pool public pool;
     address public poolManager;
@@ -43,18 +44,33 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     function expectedToken0Amount(uint256 token1Amount) public virtual returns (uint256);
 
     function setUp() public virtual {
+        setUp_fork();
         setUp_user();
-        (token0FuzzMin, token0FuzzMax, token1FuzzMin, token1FuzzMax) = setUp_fuzzer();
         swapHelper = UniswapV3Helper(setUp_swapHelper());
-        pool = swapHelper.pool();
-        token0 = pool.token0();
-        token1 = pool.token1();
+        pool = IUniswapV3Pool(setUp_pool());
+        (token0, token1) = setUp_tokens();
+        (token0FuzzMin, token0FuzzMax, token1FuzzMin, token1FuzzMax) = setUp_fuzzer();
         poolBalance0 = IERC20(token0).balanceOf(address(pool));
         poolBalance1 = IERC20(token1).balanceOf(address(pool));
     }
 
+    function setUp_pool() public virtual returns (address) {
+        return address(swapHelper.pool());
+    }
+
+    function setUp_tokens() public virtual returns (address, address) {
+        return (pool.token0(), pool.token1());
+    }
+
     function setUp_user() public virtual {
         user = address(1);
+    }
+
+    function setUp_fork() public virtual {
+        string memory url = vm.rpcUrl("mainnet");
+        uint256 blockNumber = vm.envUint("BLOCK");
+        assertGt(blockNumber, 0, "Please set BLOCK envariable");
+        forkId = vm.createSelectFork(url, blockNumber);
     }
 
     function t_previewBuyToken0(uint256 token0Amount, int24 maxDeviation) public {
@@ -74,6 +90,8 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function t_previewSellToken0(uint256 token0Amount, int24 maxDeviation) public {
+        emit log_named_decimal_uint("token0Amount: ", token0Amount, 6);
+        emit log_named_decimal_uint("token0FuzzMax: ", token0FuzzMax, 6);
         vm.assume(token0Amount >= token0FuzzMin && token0Amount <= token0FuzzMax);
         uint256 token1Amount = swapHelper.previewSellToken0(token0Amount);
         uint256 expectedAmount = expectedToken1Amount(token0Amount);

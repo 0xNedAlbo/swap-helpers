@@ -11,7 +11,7 @@ import { IAggregator } from "@src/interfaces/chainlink/IAggregator.sol";
 
 import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
 import { Slippage } from "@src/utils/Slippage.sol";
-import { DaiToEthSwapHelper } from "@src/DaiToEthSwapHelper.sol";
+import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
 import { UniswapV3HelperTest } from "./utils/UniswapV3HelperTest.sol";
 
 contract DaiToEthSwapHelperTest is UniswapV3HelperTest {
@@ -25,13 +25,10 @@ contract DaiToEthSwapHelperTest is UniswapV3HelperTest {
 
     int24 public maxDeviation = 1200;
 
-    DaiToEthSwapHelper public helper;
-
     constructor() UniswapV3HelperTest() { }
 
     function setUp_swapHelper() public override returns (address) {
-        helper = new DaiToEthSwapHelper();
-        return address(helper);
+        return address(new UniswapV3Helper(POOL_ADDRESS));
     }
 
     function setUp_fuzzer()

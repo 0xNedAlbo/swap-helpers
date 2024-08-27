@@ -19,6 +19,8 @@ test-contract-gas  :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_K
 trace-contract  :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY} --block-number $(block) -vvv --match-contract $(contract)
 test-test  :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY} --block-number $(block) -vv --match-test $(test)
 trace-test  :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY} --block-number $(block)  --etherscan-api-key ${API_KEY_ETHERSCAN} -vvv --match-test $(test)
+trace-contract-test  :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY} --block-number $(block)  --etherscan-api-key ${API_KEY_ETHERSCAN} -vvv --match-contract $(contract) --match-test $(test)
+test-contract-test :; forge test -f https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY} --block-number $(block)  --etherscan-api-key ${API_KEY_ETHERSCAN} -vv --match-contract $(contract) --match-test $(test)
 
 clean  :; forge clean
 snapshot :; forge snapshot
