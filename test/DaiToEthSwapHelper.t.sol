@@ -47,21 +47,25 @@ contract DaiToEthSwapHelperTest is UniswapV3HelperTest {
     }
 
     function test_buyMaxDaiAmount() public {
+        resetPoolBalances();
         if (pool.token0() == DAI) t_buyMaxToken0Amount(maxDeviation);
         else t_buyMaxToken1Amount(maxDeviation);
     }
 
     function test_buyMinDaiAmount() public {
+        resetPoolBalances();
         if (pool.token0() == DAI) t_buyMinToken0Amount(maxDeviation);
         else t_buyMinToken1Amount(maxDeviation);
     }
 
     function test_buyMaxWethAmount() public {
+        resetPoolBalances();
         if (pool.token0() == address(WETH)) t_buyMaxToken0Amount(maxDeviation);
         else t_buyMaxToken1Amount(maxDeviation);
     }
 
     function test_buyMinWethAmount() public {
+        resetPoolBalances();
         if (pool.token0() == address(WETH)) t_buyMinToken0Amount(maxDeviation);
         else t_buyMinToken1Amount(maxDeviation);
     }
@@ -82,23 +86,47 @@ contract DaiToEthSwapHelperTest is UniswapV3HelperTest {
     }
 
     function test_sellMaxDaiAmount() public {
+        resetPoolBalances();
         if (pool.token0() == DAI) t_sellMinToken0Amount(maxDeviation);
         else t_sellMinToken1Amount(maxDeviation);
     }
 
     function test_sellMinDaiAmount() public {
+        resetPoolBalances();
         if (pool.token0() == DAI) t_sellMinToken0Amount(maxDeviation);
         else t_sellMinToken1Amount(maxDeviation);
     }
 
     function test_sellMaxWethAmount() public {
+        resetPoolBalances();
         if (pool.token0() == address(WETH)) t_sellMinToken0Amount(maxDeviation);
         else t_sellMinToken1Amount(maxDeviation);
     }
 
     function test_sellMinWethAmount() public {
+        resetPoolBalances();
         if (pool.token0() == address(WETH)) t_sellMinToken0Amount(maxDeviation);
         else t_sellMinToken1Amount(maxDeviation);
+    }
+
+    function test_buyDai_revertsOnDeviationFromOracle() public {
+        if (pool.token0() == DAI) t_buyToken0_revertsOnDeviationFromOracle(maxDeviation);
+        else t_buyToken1_revertsOnDeviationFromOracle(500);
+    }
+
+    function test_buyWeth_revertsOnDeviationFromOracle() public {
+        if (pool.token0() == address(WETH)) t_buyToken0_revertsOnDeviationFromOracle(maxDeviation);
+        else t_buyToken0_revertsOnDeviationFromOracle(500);
+    }
+
+    function test_sellDai_revertsOnDeviationFromOracle() public {
+        if (pool.token0() == DAI) t_sellToken0_revertsOnDeviationFromOracle(500);
+        else t_sellToken1_revertsOnDeviationFromOracle(500);
+    }
+
+    function test_sellWeth_revertsOnDeviationFromOracle() public {
+        if (pool.token0() == address(WETH)) t_sellToken0_revertsOnDeviationFromOracle(500);
+        else t_sellToken1_revertsOnDeviationFromOracle(500);
     }
 
     function expectedWethAmount(uint256 daiAmount) public view returns (uint256 wethAmount) {

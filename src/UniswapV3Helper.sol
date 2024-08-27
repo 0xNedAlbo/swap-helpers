@@ -140,24 +140,12 @@ abstract contract UniswapV3Helper is ISwapHelper {
         } else if (swapType == SwapType.PreviewSellToken0) {
             revert(string(abi.encode(uint256(-amount1Delta))));
         } else if (swapType == SwapType.BuyToken0) {
-            console.log("swapCaller: ", swapCaller);
-            console.log("msg.sender: ", msg.sender);
-            console.log("amount1Delta: ", amount1Delta);
             IERC20(pool.token1()).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
         } else if (swapType == SwapType.BuyToken1) {
-            console.log("swapCaller: ", swapCaller);
-            console.log("msg.sender: ", msg.sender);
-            console.log("amount0Delta: ", amount0Delta);
             IERC20(pool.token0()).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
         } else if (swapType == SwapType.SellToken0) {
-            console.log("swapCaller: ", swapCaller);
-            console.log("msg.sender: ", msg.sender);
-            console.log("amount0Delta: ", amount0Delta);
             IERC20(pool.token0()).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
         } else if (swapType == SwapType.SellToken1) {
-            console.log("swapCaller: ", swapCaller);
-            console.log("msg.sender: ", msg.sender);
-            console.log("amount1Delta: ", amount1Delta);
             IERC20(pool.token1()).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
         }
     }

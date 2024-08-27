@@ -17,6 +17,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
 
     address public user;
     IUniswapV3Pool public pool;
+    address public poolManager;
 
     IWETH public WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
@@ -56,19 +57,6 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         user = address(1);
     }
 
-    function setBalance(address owner, address token, uint256 amount) public {
-        if (token == address(WETH)) {
-            deal(owner, amount);
-            deal(address(WETH), owner, 0);
-            if (amount > 0) {
-                vm.prank(owner);
-                WETH.deposit{ value: amount }();
-            }
-        } else {
-            deal(token, owner, amount);
-        }
-    }
-
     function t_previewBuyToken0(uint256 token0Amount, int24 maxDeviation) public {
         vm.assume(token0Amount >= token0FuzzMin && token0Amount <= token0FuzzMax);
         uint256 token1Amount = swapHelper.previewBuyToken0(token0Amount);
@@ -78,7 +66,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function t_previewBuyToken1(uint256 token1Amount, int24 maxDeviation) public {
-        vm.assume(token1Amount >= token0FuzzMin && token1Amount <= token0FuzzMax);
+        vm.assume(token1Amount >= token1FuzzMin && token1Amount <= token1FuzzMax);
         uint256 token0Amount = swapHelper.previewBuyToken1(token1Amount);
         uint256 expectedAmount = expectedToken0Amount(token1Amount);
         int24 slippage = expectedAmount.slippage(token0Amount);
@@ -94,7 +82,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function t_previewSellToken1(uint256 token1Amount, int24 maxDeviation) public {
-        vm.assume(token1Amount >= token0FuzzMin && token1Amount <= token0FuzzMax);
+        vm.assume(token1Amount >= token1FuzzMin && token1Amount <= token1FuzzMax);
         uint256 token0Amount = swapHelper.previewSellToken1(token1Amount);
         uint256 expectedAmount = expectedToken0Amount(token1Amount);
         int24 slippage = expectedAmount.slippage(token0Amount);
@@ -193,8 +181,90 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         t_sellToken1Amount(token1FuzzMax, maxDeviation);
     }
 
+    function t_buyToken0_revertsOnDeviationFromOracle(int24 maxDeviation) public {
+        resetPoolBalances();
+        uint256 halfPool = poolBalance0 / 2;
+        uint256 token1MaxAmount = expectedToken1Amount(halfPool).applySlippage(maxDeviation);
+        uint256 token1Required = swapHelper.previewBuyToken0(halfPool);
+        setBalance(user, token1, token1Required);
+        vm.prank(user);
+        IERC20(token1).approve(address(swapHelper), token1Required);
+        vm.expectRevert(bytes("!slippage"));
+        vm.prank(user);
+        swapHelper.buyToken0(halfPool, token1MaxAmount, user);
+    }
+
+    function t_buyToken1_revertsOnDeviationFromOracle(int24 maxDeviation) public {
+        resetPoolBalances();
+        uint256 halfPool = poolBalance1 / 2;
+        uint256 token0MaxAmount = expectedToken0Amount(halfPool).applySlippage(maxDeviation);
+        uint256 token0Required = swapHelper.previewBuyToken1(halfPool);
+        setBalance(user, token1, token0Required);
+        vm.prank(user);
+        IERC20(token0).approve(address(swapHelper), token0Required);
+        vm.expectRevert(bytes("!slippage"));
+        vm.prank(user);
+        swapHelper.buyToken1(halfPool, token0MaxAmount, user);
+    }
+
+    function t_sellToken0_revertsOnDeviationFromOracle(int24 maxDeviation) public {
+        resetPoolBalances();
+        uint256 bigAmount = poolBalance0 * 2;
+        uint256 token1MinAmount = expectedToken1Amount(bigAmount).applySlippage(-maxDeviation);
+        setBalance(user, token0, bigAmount);
+        vm.prank(user);
+        IERC20(token0).approve(address(swapHelper), bigAmount);
+        vm.expectRevert(bytes("!slippage"));
+        vm.prank(user);
+        swapHelper.sellToken0(bigAmount, token1MinAmount, user);
+    }
+
+    function t_sellToken1_revertsOnDeviationFromOracle(int24 maxDeviation) public {
+        resetPoolBalances();
+        uint256 bigAmount = poolBalance1 * 1400 / 1000;
+        uint256 token0MinAmount = expectedToken0Amount(bigAmount).applySlippage(maxDeviation);
+        setBalance(user, token1, bigAmount);
+        vm.prank(user);
+        IERC20(token1).approve(address(swapHelper), bigAmount);
+        vm.expectRevert(bytes("!slippage"));
+        vm.prank(user);
+        swapHelper.sellToken1(bigAmount, token0MinAmount, user);
+    }
+
     function resetPoolBalances() public {
-        setBalance(address(pool), token0, poolBalance0);
-        setBalance(address(pool), token1, poolBalance1);
+        uint256 currentBalance = IERC20(token0).balanceOf(address(pool));
+        uint256 delta;
+        if (currentBalance < poolBalance0) {
+            delta = poolBalance0 - currentBalance;
+            setBalance(poolManager, token0, delta);
+            vm.prank(poolManager);
+            IERC20(token0).approve(address(swapHelper), delta);
+            vm.prank(poolManager);
+            swapHelper.sellToken0(delta, 1, poolManager);
+        } else if (currentBalance > poolBalance0) {
+            delta = currentBalance - poolBalance0;
+            uint256 token1Quote = swapHelper.previewBuyToken0(delta);
+            token1Quote = token1Quote.applySlippage(5000);
+            setBalance(poolManager, token1, token1Quote);
+            vm.prank(poolManager);
+            IERC20(token1).approve(address(swapHelper), token1Quote);
+            vm.prank(poolManager);
+            swapHelper.buyToken0(delta, token1Quote, poolManager);
+        }
+        currentBalance = IERC20(token0).balanceOf(address(pool));
+        require(currentBalance == poolBalance0, "pool reset failed");
+    }
+
+    function setBalance(address owner, address token, uint256 amount) public {
+        if (token == address(WETH)) {
+            deal(owner, amount);
+            deal(address(WETH), owner, 0);
+            if (amount > 0) {
+                vm.prank(owner);
+                WETH.deposit{ value: amount }();
+            }
+        } else {
+            deal(token, owner, amount);
+        }
     }
 }
