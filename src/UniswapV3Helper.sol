@@ -16,16 +16,13 @@ contract UniswapV3Helper is ISwapHelper {
 
     IUniswapV3Pool public pool;
 
+    address public token0;
+    address public token1;
+
     constructor(address poolAddress) {
         pool = IUniswapV3Pool(poolAddress);
-    }
-
-    function token0() public view returns (address) {
-        return pool.token0();
-    }
-
-    function token1() public view returns (address) {
-        return pool.token1();
+        token0 = pool.token0();
+        token1 = pool.token1();
     }
 
     function previewBuyToken0(uint256 amount0) public virtual returns (uint256 amount1) {
@@ -78,7 +75,7 @@ contract UniswapV3Helper is ISwapHelper {
         (, int256 amount1) =
             pool.swap(address(this), false, -int256(amount0), TickMath.MAX_SQRT_RATIO - 1, callbackData);
         amountIn = uint256(amount1);
-        IERC20(pool.token0()).safeTransfer(receiver, amount0);
+        IERC20(token0).safeTransfer(receiver, amount0);
         emit SwapFromToken1(msg.sender, receiver, uint256(amountIn), amount0);
         require(amountIn <= maxAmountIn, "!slippage");
     }
@@ -88,7 +85,7 @@ contract UniswapV3Helper is ISwapHelper {
         bytes memory callbackData = abi.encode(SwapType.BuyToken1, msg.sender);
         (int256 amount0,) = pool.swap(address(this), true, -int256(amount1), TickMath.MIN_SQRT_RATIO + 1, callbackData);
         amountIn = uint256(amount0);
-        IERC20(pool.token1()).safeTransfer(receiver, amount1);
+        IERC20(token1).safeTransfer(receiver, amount1);
         emit SwapFromToken0(msg.sender, receiver, uint256(amountIn), amount1);
         require(amountIn <= maxAmountIn, "!slippage");
     }
@@ -106,7 +103,7 @@ contract UniswapV3Helper is ISwapHelper {
         bytes memory callbackData = abi.encode(SwapType.SellToken0, msg.sender);
         (, int256 amount1) = pool.swap(address(this), true, int256(amount0), TickMath.MIN_SQRT_RATIO + 1, callbackData);
         amountOut = uint256(-amount1);
-        IERC20(pool.token1()).safeTransfer(receiver, amountOut);
+        IERC20(token1).safeTransfer(receiver, amountOut);
         emit SwapFromToken0(msg.sender, receiver, amount0, amountOut);
         require(amountOut >= minAmountOut, "!slippage");
     }
@@ -124,7 +121,7 @@ contract UniswapV3Helper is ISwapHelper {
         bytes memory callbackData = abi.encode(SwapType.SellToken1, msg.sender);
         (int256 amount0,) = pool.swap(address(this), false, int256(amount1), TickMath.MAX_SQRT_RATIO - 1, callbackData);
         amountOut = uint256(-amount0);
-        IERC20(pool.token0()).safeTransfer(receiver, amountOut);
+        IERC20(token0).safeTransfer(receiver, amountOut);
         emit SwapFromToken0(msg.sender, receiver, amount1, amountOut);
         require(amountOut >= minAmountOut, "!slippage");
     }
@@ -140,13 +137,13 @@ contract UniswapV3Helper is ISwapHelper {
         } else if (swapType == SwapType.PreviewSellToken0) {
             revert(string(abi.encode(uint256(-amount1Delta))));
         } else if (swapType == SwapType.BuyToken0) {
-            IERC20(pool.token1()).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
+            IERC20(token1).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
         } else if (swapType == SwapType.BuyToken1) {
-            IERC20(pool.token0()).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
+            IERC20(token0).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
         } else if (swapType == SwapType.SellToken0) {
-            IERC20(pool.token0()).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
+            IERC20(token0).safeTransferFrom(swapCaller, msg.sender, uint256(amount0Delta));
         } else if (swapType == SwapType.SellToken1) {
-            IERC20(pool.token1()).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
+            IERC20(token1).safeTransferFrom(swapCaller, msg.sender, uint256(amount1Delta));
         }
     }
 }
