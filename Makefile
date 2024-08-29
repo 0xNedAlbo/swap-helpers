@@ -1,4 +1,4 @@
-include .env
+-include .env
 
 # deps
 update:; forge update
@@ -10,6 +10,8 @@ inspect :; forge inspect ${contract} storage-layout --pretty
 # Get the list of function selectors
 selectors  :; forge inspect ${contract} methods --pretty
 
+test := test_
+
 # local tests without fork
 test  :; forge test -vv
 trace  :; forge test  -vvv
@@ -17,9 +19,9 @@ gas  :; forge test --gas-report
 test-contract  :; forge test -vv --match-contract $(contract)
 test-contract-gas  :; forge test --gas-report --match-contract ${contract}
 trace-contract  :; forge test -vvv --match-contract $(contract)
-test-test  :; forge test  -vv --match-test $(test)
-trace-test  :; forge test  --etherscan-api-key ${API_KEY_ETHERSCAN} -vvv --match-test $(test)
-trace-contract-test  :; forge test --etherscan-api-key ${API_KEY_ETHERSCAN} -vvv --match-contract $(contract) --match-test $(test)
+test-test  :; forge test -vv --match-test $(test)
+trace-test  :; forge test -vvv --match-test $(test)
+trace-contract-test  :; forge test -vvv --match-contract $(contract) --match-test $(test)
 test-contract-test :; forge test -vv --match-contract $(contract) --match-test $(test)
 
 clean  :; forge clean
