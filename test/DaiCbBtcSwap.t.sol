@@ -33,7 +33,7 @@ contract DaiCbBtcSwapTest is SwapHelperTest {
         token0 = DAI;
         token1 = CBBTC;
         //bytes memory path = abi.encodePacked(DAI, uint24(100), USDC, uint24(3000), CBBTC);
-        UniswapV3Helper swapHelper = new UniswapV3Helper();
+        UniswapV3Helper swapHelper = new UniswapV3Helper(router);
         swapHelper.initialize(DAI_USDC_POOL, USDC_CBBTC_POOL);
         return address(swapHelper);
     }

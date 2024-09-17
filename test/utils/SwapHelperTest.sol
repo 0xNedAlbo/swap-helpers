@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.18;
 
-import {console} from "forge-std/src/console.sol";
-import {StdCheats} from "forge-std/src/StdCheats.sol";
-import {Test} from "forge-std/src/Test.sol";
-import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IWETH} from "mock-tokens/src/interfaces/IWETH.sol";
-import {Slippage} from "@src/utils/Slippage.sol";
-import {ISwapHelper} from "@src/interfaces/ISwapHelper.sol";
+import { console } from "forge-std/src/console.sol";
+import { StdCheats } from "forge-std/src/StdCheats.sol";
+import { Test } from "forge-std/src/Test.sol";
+import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IWETH } from "mock-tokens/src/interfaces/IWETH.sol";
+import { Slippage } from "@src/utils/Slippage.sol";
+import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
 
 abstract contract SwapHelperTest is StdCheats, Test {
     using Slippage for uint256;
@@ -17,6 +17,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
     uint256 public forkId;
     address public user;
 
+    address public router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     IWETH public WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
     uint256 public token0FuzzMin;
@@ -244,7 +245,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
             deal(address(WETH), owner, 0);
             if (amount > 0) {
                 vm.prank(owner);
-                WETH.deposit{value: amount}();
+                WETH.deposit{ value: amount }();
             }
         } else {
             deal(token, owner, amount);

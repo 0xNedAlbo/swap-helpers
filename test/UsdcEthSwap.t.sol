@@ -26,7 +26,7 @@ contract UsdcEthSwapTest is SwapHelperTest {
     constructor() SwapHelperTest() { }
 
     function setUp_swapHelper() public override returns (address) {
-        UniswapV3Helper swapHelper_ = new UniswapV3Helper();
+        UniswapV3Helper swapHelper_ = new UniswapV3Helper(router);
         swapHelper_.initialize(POOL_ADDRESS);
         return address(swapHelper_);
     }

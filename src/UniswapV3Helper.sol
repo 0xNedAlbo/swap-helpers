@@ -10,13 +10,11 @@ import { TickMath } from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
 import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import { Test } from "forge-std/src/Test.sol";
 
-contract UniswapV3Helper is ISwapHelper, Test {
+contract UniswapV3Helper is ISwapHelper {
     using SafeERC20 for IERC20;
 
-    IUniswapV3Factory public factory = IUniswapV3Factory(0x1F98431c8aD98523631AE4a59f267346ea31F984);
-    ISwapRouter public router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter public immutable router;
 
     IUniswapV3Pool[] public pools;
 
@@ -33,6 +31,15 @@ contract UniswapV3Helper is ISwapHelper, Test {
         }
         require(isPool, "caller not a pool");
         _;
+    }
+
+    modifier initialized() {
+        require(pools.length > 0, "not initialized");
+        _;
+    }
+
+    constructor(address routerAddr) {
+        router = ISwapRouter(routerAddr);
     }
 
     function initialize(address pool) public {
@@ -92,34 +99,6 @@ contract UniswapV3Helper is ISwapHelper, Test {
         path = path_;
     }
 
-    function setupPools(bytes memory path_) private {
-        // Each segment is 23 bytes: 20 bytes for token and 3 bytes for fee
-        uint256 numPools = (path_.length - 20) / 23; // -20 for the last token that has no fee
-
-        token0 = toAddress(path_, 0);
-
-        uint256 offset = 0;
-        for (uint256 i = 0; i < numPools; i++) {
-            // Extract token address (20 bytes)
-            address poolToken0 = toAddress(path_, offset);
-            offset += 20;
-
-            // Extract fee (3 bytes)
-            uint24 poolFees = toUint24(path_, offset);
-            offset += 3;
-
-            // Extract the next token
-            address poolToken1 = toAddress(path_, offset);
-
-            // Find pool address
-            address pool = factory.getPool(poolToken0, poolToken1, poolFees);
-            pools.push(IUniswapV3Pool(pool));
-        }
-
-        // Extract the last token (it has no fee)
-        token1 = toAddress(path_, offset);
-    }
-
     function setupReversePath() private {
         uint256 numPools = (path.length - 20) / 23; // -20 for the last token that has no fee
 
@@ -162,7 +141,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
         return tempUint;
     }
 
-    function previewBuyToken0(uint256 amount0) external override returns (uint256 amount1) {
+    function previewBuyToken0(uint256 amount0) external override initialized returns (uint256 amount1) {
         require(amount0 <= uint256(type(int256).max), "!<=int256.max");
         address token = token0;
         amount1 = amount0;
@@ -173,7 +152,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
         }
     }
 
-    function previewBuyToken1(uint256 amount1) external override returns (uint256 amount0) {
+    function previewBuyToken1(uint256 amount1) external override initialized returns (uint256 amount0) {
         require(amount1 <= uint256(type(int256).max), "!<=int256.max");
         address token = token1;
         uint256 amount = amount1;
@@ -207,7 +186,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
         tokenOut = zeroForOne ? pool.token0() : pool.token1();
     }
 
-    function previewSellToken0(uint256 amount0) external override returns (uint256 amount1) {
+    function previewSellToken0(uint256 amount0) external override initialized returns (uint256 amount1) {
         require(amount0 <= uint256(type(int256).max), "!<=int256.max");
         address token = token0;
         amount1 = amount0;
@@ -218,7 +197,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
         }
     }
 
-    function previewSellToken1(uint256 amount1) external override returns (uint256 amount0) {
+    function previewSellToken1(uint256 amount1) external override initialized returns (uint256 amount0) {
         require(amount1 <= uint256(type(int256).max), "!<=int256.max");
         address token = token1;
         amount0 = amount1;
@@ -257,6 +236,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
     )
         external
         override
+        initialized
         returns (uint256 amount1)
     {
         IERC20(token1).safeTransferFrom(msg.sender, address(this), maxAmount1);
@@ -281,6 +261,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
     )
         external
         override
+        initialized
         returns (uint256 amount0)
     {
         IERC20(token0).safeTransferFrom(msg.sender, address(this), maxAmount0);
@@ -305,6 +286,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
     )
         external
         override
+        initialized
         returns (uint256 amount1)
     {
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amount0);
@@ -326,6 +308,7 @@ contract UniswapV3Helper is ISwapHelper, Test {
     )
         external
         override
+        initialized
         returns (uint256 amount0)
     {
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amount1);
