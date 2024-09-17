@@ -26,7 +26,9 @@ contract DaiEthSwapTest is SwapHelperTest {
     constructor() SwapHelperTest() { }
 
     function setUp_swapHelper() public override returns (address) {
-        return address(new UniswapV3Helper(POOL_ADDRESS));
+        UniswapV3Helper swapHelper_ = new UniswapV3Helper();
+        swapHelper_.initialize(POOL_ADDRESS);
+        return address(swapHelper_);
     }
 
     function setUp_fuzzer()

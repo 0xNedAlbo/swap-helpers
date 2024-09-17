@@ -11,7 +11,7 @@ import { IAggregator } from "@src/interfaces/chainlink/IAggregator.sol";
 import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
 import { Slippage } from "@src/utils/Slippage.sol";
 import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
-import { RoutedSwapHelper } from "@src/RoutedSwapHelper.sol";
+import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
 import { SwapHelperTest } from "./utils/SwapHelperTest.sol";
 
 contract DaiCbBtcSwapTest is SwapHelperTest {
@@ -32,8 +32,10 @@ contract DaiCbBtcSwapTest is SwapHelperTest {
     function setUp_swapHelper() public override returns (address) {
         token0 = DAI;
         token1 = CBBTC;
-        bytes memory path = abi.encodePacked(DAI, uint24(100), USDC, uint24(3000), CBBTC);
-        return address(new RoutedSwapHelper(path));
+        //bytes memory path = abi.encodePacked(DAI, uint24(100), USDC, uint24(3000), CBBTC);
+        UniswapV3Helper swapHelper = new UniswapV3Helper();
+        swapHelper.initialize(DAI_USDC_POOL, USDC_CBBTC_POOL);
+        return address(swapHelper);
     }
 
     function setUp_fuzzer()

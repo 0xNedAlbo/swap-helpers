@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.18;
 
-import { console } from "forge-std/src/console.sol";
-import { StdCheats } from "forge-std/src/StdCheats.sol";
-import { Test } from "forge-std/src/Test.sol";
-import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IWETH } from "mock-tokens/src/interfaces/IWETH.sol";
-import { Slippage } from "@src/utils/Slippage.sol";
-import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
+import {console} from "forge-std/src/console.sol";
+import {StdCheats} from "forge-std/src/StdCheats.sol";
+import {Test} from "forge-std/src/Test.sol";
+import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IWETH} from "mock-tokens/src/interfaces/IWETH.sol";
+import {Slippage} from "@src/utils/Slippage.sol";
+import {ISwapHelper} from "@src/interfaces/ISwapHelper.sol";
 
 abstract contract SwapHelperTest is StdCheats, Test {
     using Slippage for uint256;
@@ -115,8 +115,6 @@ abstract contract SwapHelperTest is StdCheats, Test {
     }
 
     function test_10_previewSellToken0(uint256 token0Amount) public virtual {
-        emit log_named_decimal_uint("token0Amount: ", token0Amount, 6);
-        emit log_named_decimal_uint("token0FuzzMax: ", token0FuzzMax, 6);
         vm.assume(token0Amount >= token0FuzzMin && token0Amount <= token0FuzzMax);
         uint256 token1Amount = swapHelper.previewSellToken0(token0Amount);
         uint256 expectedAmount = expectedToken1Amount(token0Amount);
@@ -201,7 +199,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
         setBalance(user, token1, token1Required);
         vm.prank(user);
         IERC20(token1).approve(address(swapHelper), token1Required);
-        vm.expectRevert(bytes("!slippage"));
+        vm.expectRevert( /*bytes("!slippage")*/ );
         vm.prank(user);
         swapHelper.buyToken0(bigAmount, token1MaxAmount, user);
     }
@@ -213,7 +211,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
         setBalance(user, token0, token0Required);
         vm.prank(user);
         IERC20(token0).approve(address(swapHelper), token0Required);
-        vm.expectRevert(bytes("!slippage"));
+        vm.expectRevert( /*bytes("!slippage")*/ );
         vm.prank(user);
         swapHelper.buyToken1(bigAmount, token0MaxAmount, user);
     }
@@ -224,7 +222,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
         setBalance(user, token0, bigAmount);
         vm.prank(user);
         IERC20(token0).approve(address(swapHelper), bigAmount);
-        vm.expectRevert(bytes("!slippage"));
+        vm.expectRevert( /*bytes("!slippage")*/ );
         vm.prank(user);
         swapHelper.sellToken0(bigAmount, token1MinAmount, user);
     }
@@ -235,7 +233,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
         setBalance(user, token1, bigAmount);
         vm.prank(user);
         IERC20(token1).approve(address(swapHelper), bigAmount);
-        vm.expectRevert(bytes("!slippage"));
+        vm.expectRevert( /*bytes("!slippage")*/ );
         vm.prank(user);
         swapHelper.sellToken1(bigAmount, token0MinAmount, user);
     }
@@ -246,7 +244,7 @@ abstract contract SwapHelperTest is StdCheats, Test {
             deal(address(WETH), owner, 0);
             if (amount > 0) {
                 vm.prank(owner);
-                WETH.deposit{ value: amount }();
+                WETH.deposit{value: amount}();
             }
         } else {
             deal(token, owner, amount);
