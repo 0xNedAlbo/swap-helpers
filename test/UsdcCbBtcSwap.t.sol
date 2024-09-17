@@ -13,15 +13,16 @@ import { Slippage } from "@src/utils/Slippage.sol";
 import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
 import { SwapHelperTest } from "./utils/SwapHelperTest.sol";
 
-contract UsdcEthSwapTest is SwapHelperTest {
+contract UsdcCbBtcSwapTest is SwapHelperTest {
     using Math for uint256;
     using Slippage for uint256;
 
-    address constant POOL_ADDRESS = 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640;
+    address constant POOL_ADDRESS = 0x4548280AC92507C9092a511C7396Cbea78FA9E49;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address constant CBBTC = 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf;
 
     IAggregator usdcAggregator = IAggregator(0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6);
-    IAggregator ethAggregator = IAggregator(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
+    IAggregator btcAggregator = IAggregator(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
 
     constructor() SwapHelperTest() { }
 
@@ -37,12 +38,12 @@ contract UsdcEthSwapTest is SwapHelperTest {
     {
         uint256 usdcMin = 1e6;
         uint256 usdcMax = 100_000e6;
-        uint256 wethMin = 1e16;
-        uint256 wethMax = 100e18;
-        token0FuzzMin = token0 == USDC ? usdcMin : wethMin;
-        token0FuzzMax = token0 == USDC ? usdcMax : wethMax;
-        token1FuzzMin = token1 == USDC ? usdcMin : wethMin;
-        token1FuzzMax = token1 == USDC ? usdcMax : wethMax;
+        uint256 cbbtcMin = 1e6;
+        uint256 cbbtcMax = 5e8;
+        token0FuzzMin = token0 == USDC ? usdcMin : cbbtcMin;
+        token0FuzzMax = token0 == USDC ? usdcMax : cbbtcMax;
+        token1FuzzMin = token1 == USDC ? usdcMin : cbbtcMin;
+        token1FuzzMax = token1 == USDC ? usdcMax : cbbtcMax;
     }
 
     function setUp_maxDeviation() public virtual override returns (int24) {
@@ -51,12 +52,12 @@ contract UsdcEthSwapTest is SwapHelperTest {
 
     function test_00_poolComposition() public view {
         require(token0 == USDC || token1 == USDC, "pool has no USDC");
-        require(token0 == address(WETH) || token1 == address(WETH), "pool has no WETH");
+        require(token0 == CBBTC || token1 == address(CBBTC), "pool has no CBBTC");
         require(token0 != token1, "pool with identical tokens");
     }
 
     function token0AmountToUsd(uint256 token0Amount) public virtual override returns (uint256 usdAmount) {
-        IAggregator priceFeed = token0 == USDC ? usdcAggregator : ethAggregator;
+        IAggregator priceFeed = token0 == USDC ? usdcAggregator : btcAggregator;
         uint256 latestAnswer = uint256(priceFeed.latestAnswer());
         uint8 token0Decimals = IERC20Metadata(token0).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
@@ -65,7 +66,7 @@ contract UsdcEthSwapTest is SwapHelperTest {
     }
 
     function token1AmountToUsd(uint256 token1Amount) public virtual override returns (uint256 usdAmount) {
-        IAggregator priceFeed = token1 == USDC ? usdcAggregator : ethAggregator;
+        IAggregator priceFeed = token1 == USDC ? usdcAggregator : btcAggregator;
         uint256 latestAnswer = uint256(priceFeed.latestAnswer());
         uint8 token1Decimals = IERC20Metadata(token1).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
@@ -74,7 +75,7 @@ contract UsdcEthSwapTest is SwapHelperTest {
     }
 
     function usdAmountToToken0(uint256 usdAmount) public virtual override returns (uint256 token0Amount) {
-        IAggregator priceFeed = token0 == USDC ? usdcAggregator : ethAggregator;
+        IAggregator priceFeed = token0 == USDC ? usdcAggregator : btcAggregator;
         uint256 latestAnswer = uint256(priceFeed.latestAnswer());
         uint8 token0Decimals = IERC20Metadata(token0).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
@@ -83,7 +84,7 @@ contract UsdcEthSwapTest is SwapHelperTest {
     }
 
     function usdAmountToToken1(uint256 usdAmount) public virtual override returns (uint256 token1Amount) {
-        IAggregator priceFeed = token1 == USDC ? usdcAggregator : ethAggregator;
+        IAggregator priceFeed = token1 == USDC ? usdcAggregator : btcAggregator;
         uint256 latestAnswer = uint256(priceFeed.latestAnswer());
         uint8 token1Decimals = IERC20Metadata(token1).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();

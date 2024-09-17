@@ -6,19 +6,16 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Test } from "forge-std/src/Test.sol";
 import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IWETH } from "mock-tokens/src/interfaces/IWETH.sol";
-import { IUniswapV3Pool } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import { Slippage } from "@src/utils/Slippage.sol";
-import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
+import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
 
-abstract contract UniswapV3HelperTest is StdCheats, Test {
+abstract contract SwapHelperTest is StdCheats, Test {
     using Slippage for uint256;
 
-    UniswapV3Helper public swapHelper;
+    ISwapHelper public swapHelper;
 
     uint256 public forkId;
     address public user;
-    IUniswapV3Pool public pool;
-    address public poolManager;
 
     IWETH public WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
@@ -29,9 +26,6 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
 
     address public token0;
     address public token1;
-
-    uint256 public poolBalance0;
-    uint256 public poolBalance1;
 
     int24 public maxDeviation = 500;
 
@@ -52,21 +46,14 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     function setUp() public virtual {
         setUp_fork();
         setUp_user();
-        swapHelper = UniswapV3Helper(setUp_swapHelper());
-        pool = IUniswapV3Pool(setUp_pool());
+        swapHelper = ISwapHelper(setUp_swapHelper());
         (token0, token1) = setUp_tokens();
         (token0FuzzMin, token0FuzzMax, token1FuzzMin, token1FuzzMax) = setUp_fuzzer();
-        poolBalance0 = IERC20(token0).balanceOf(address(pool));
-        poolBalance1 = IERC20(token1).balanceOf(address(pool));
         maxDeviation = setUp_maxDeviation();
     }
 
-    function setUp_pool() public virtual returns (address) {
-        return address(swapHelper.pool());
-    }
-
     function setUp_tokens() public virtual returns (address, address) {
-        return (pool.token0(), pool.token1());
+        return (swapHelper.token0(), swapHelper.token1());
     }
 
     function setUp_user() public virtual {
@@ -115,6 +102,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         uint256 expectedAmount = expectedToken1Amount(token0Amount);
         int24 slippage = expectedAmount.slippage(token1Amount);
         require(slippage <= maxDeviation, "oracle deviation");
+        require(slippage >= 0, "slippage below zero");
     }
 
     function test_10_previewBuyToken1(uint256 token1Amount) public virtual {
@@ -123,6 +111,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         uint256 expectedAmount = expectedToken0Amount(token1Amount);
         int24 slippage = expectedAmount.slippage(token0Amount);
         require(slippage <= maxDeviation, "oracle deviation");
+        require(slippage >= 0, "slippage below zero");
     }
 
     function test_10_previewSellToken0(uint256 token0Amount) public virtual {
@@ -133,6 +122,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         uint256 expectedAmount = expectedToken1Amount(token0Amount);
         int24 slippage = expectedAmount.slippage(token1Amount);
         require(slippage >= -maxDeviation, "oracle deviation");
+        require(slippage <= 0, "slippage above zero");
     }
 
     function test_10_previewSellToken1(uint256 token1Amount) public virtual {
@@ -141,6 +131,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         uint256 expectedAmount = expectedToken0Amount(token1Amount);
         int24 slippage = expectedAmount.slippage(token0Amount);
         require(slippage >= -maxDeviation, "oracle deviation");
+        require(slippage <= 0, "slippage above zero");
     }
 
     function test_20_buyToken0Amount(uint256 token0Amount) public virtual {
@@ -149,7 +140,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         setBalance(user, token1, maxToken1Amount);
         setBalance(user, token0, 0);
         vm.startPrank(user);
-        IERC20(pool.token1()).approve(address(swapHelper), maxToken1Amount);
+        IERC20(token1).approve(address(swapHelper), maxToken1Amount);
         uint256 amountIn = swapHelper.buyToken0(token0Amount, maxToken1Amount, user);
         vm.stopPrank();
         uint256 token0Balance = IERC20(token0).balanceOf(user);
@@ -163,7 +154,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         setBalance(user, token0, maxToken0Amount);
         setBalance(user, token1, 0);
         vm.startPrank(user);
-        IERC20(pool.token0()).approve(address(swapHelper), maxToken0Amount);
+        IERC20(token0).approve(address(swapHelper), maxToken0Amount);
         uint256 amountIn = swapHelper.buyToken1(token1Amount, maxToken0Amount, user);
         vm.stopPrank();
         uint256 token1Balance = IERC20(token1).balanceOf(user);
@@ -204,7 +195,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function test_30_buyToken0_revertsOnDeviationFromOracle() public virtual {
-        uint256 bigAmount = poolBalance0 * 4 / 5;
+        uint256 bigAmount = token0FuzzMax * 10;
         uint256 token1Required = swapHelper.previewBuyToken0(bigAmount);
         uint256 token1MaxAmount = token1Required.applySlippage(-maxDeviation);
         setBalance(user, token1, token1Required);
@@ -216,7 +207,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function test_30_buyToken1_revertsOnDeviationFromOracle() public virtual {
-        uint256 bigAmount = poolBalance1 * 4 / 5;
+        uint256 bigAmount = token1FuzzMax * 10;
         uint256 token0Required = swapHelper.previewBuyToken1(bigAmount);
         uint256 token0MaxAmount = token0Required.applySlippage(-maxDeviation);
         setBalance(user, token0, token0Required);
@@ -228,7 +219,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function test_30_sellToken0_revertsOnDeviationFromOracle() public virtual {
-        uint256 bigAmount = poolBalance0 * 2;
+        uint256 bigAmount = token0FuzzMax * 10;
         uint256 token1MinAmount = expectedToken1Amount(bigAmount).applySlippage(-maxDeviation);
         setBalance(user, token0, bigAmount);
         vm.prank(user);
@@ -239,7 +230,7 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
     }
 
     function test_30_sellToken1_revertsOnDeviationFromOracle() public virtual {
-        uint256 bigAmount = poolBalance1 * 2;
+        uint256 bigAmount = token1FuzzMax * 10;
         uint256 token0MinAmount = expectedToken0Amount(bigAmount).applySlippage(-maxDeviation);
         setBalance(user, token1, bigAmount);
         vm.prank(user);
@@ -247,30 +238,6 @@ abstract contract UniswapV3HelperTest is StdCheats, Test {
         vm.expectRevert(bytes("!slippage"));
         vm.prank(user);
         swapHelper.sellToken1(bigAmount, token0MinAmount, user);
-    }
-
-    function resetPoolBalances() public {
-        uint256 currentBalance = IERC20(token0).balanceOf(address(pool));
-        uint256 delta;
-        if (currentBalance < poolBalance0) {
-            delta = poolBalance0 - currentBalance;
-            setBalance(poolManager, token0, delta);
-            vm.prank(poolManager);
-            IERC20(token0).approve(address(swapHelper), delta);
-            vm.prank(poolManager);
-            swapHelper.sellToken0(delta, 1, poolManager);
-        } else if (currentBalance > poolBalance0) {
-            delta = currentBalance - poolBalance0;
-            uint256 token1Quote = swapHelper.previewBuyToken0(delta);
-            token1Quote = token1Quote.applySlippage(5000);
-            setBalance(poolManager, token1, token1Quote);
-            vm.prank(poolManager);
-            IERC20(token1).approve(address(swapHelper), token1Quote);
-            vm.prank(poolManager);
-            swapHelper.buyToken0(delta, token1Quote, poolManager);
-        }
-        currentBalance = IERC20(token0).balanceOf(address(pool));
-        require(currentBalance == poolBalance0, "pool reset failed");
     }
 
     function setBalance(address owner, address token, uint256 amount) public {

@@ -11,9 +11,9 @@ import { IAggregator } from "@src/interfaces/chainlink/IAggregator.sol";
 import { ISwapHelper } from "@src/interfaces/ISwapHelper.sol";
 import { Slippage } from "@src/utils/Slippage.sol";
 import { UniswapV3Helper } from "@src/UniswapV3Helper.sol";
-import { UniswapV3HelperTest } from "./utils/UniswapV3HelperTest.sol";
+import { SwapHelperTest } from "./utils/SwapHelperTest.sol";
 
-contract DaiEthSwapTest is UniswapV3HelperTest {
+contract DaiEthSwapTest is SwapHelperTest {
     using Math for uint256;
     using Slippage for uint256;
 
@@ -23,7 +23,7 @@ contract DaiEthSwapTest is UniswapV3HelperTest {
     IAggregator daiAggregator = IAggregator(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
     IAggregator ethAggregator = IAggregator(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
 
-    constructor() UniswapV3HelperTest() { }
+    constructor() SwapHelperTest() { }
 
     function setUp_swapHelper() public override returns (address) {
         return address(new UniswapV3Helper(POOL_ADDRESS));
