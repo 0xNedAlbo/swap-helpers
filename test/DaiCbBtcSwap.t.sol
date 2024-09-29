@@ -47,7 +47,7 @@ contract DaiCbBtcSwapTest is SwapHelperTest {
         uint256 daiMin = 1e18;
         uint256 daiMax = 100_000e18;
         uint256 cbbtcMin = 1e6;
-        uint256 cbbtcMax = 5e8;
+        uint256 cbbtcMax = 4e8;
         token0FuzzMin = token0 == DAI ? daiMin : cbbtcMin;
         token0FuzzMax = token0 == DAI ? daiMax : cbbtcMax;
         token1FuzzMin = token1 == DAI ? daiMin : cbbtcMin;

@@ -24,6 +24,8 @@ contract UniswapV3Helper is ISwapHelper {
     bytes path;
     bytes reversePath;
 
+    event Initialized(bytes indexed path, bytes indexed reversePath);
+
     modifier onlyPools() {
         bool isPool = false;
         for (uint256 i = 0; (i < pools.length) && (isPool == false); i++) {
@@ -47,6 +49,7 @@ contract UniswapV3Helper is ISwapHelper {
         pools.push(IUniswapV3Pool(pool));
         setupPath();
         setupReversePath();
+        emit Initialized(path, reversePath);
     }
 
     function initialize(address pool1, address pool2) public {
@@ -55,6 +58,7 @@ contract UniswapV3Helper is ISwapHelper {
         pools.push(IUniswapV3Pool(pool2));
         setupPath();
         setupReversePath();
+        emit Initialized(path, reversePath);
     }
 
     function initialize(address pool1, address pool2, address pool3) public {
@@ -64,6 +68,7 @@ contract UniswapV3Helper is ISwapHelper {
         pools.push(IUniswapV3Pool(pool3));
         setupPath();
         setupReversePath();
+        emit Initialized(path, reversePath);
     }
 
     function setupPath() private {
