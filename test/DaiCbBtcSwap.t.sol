@@ -32,7 +32,6 @@ contract DaiCbBtcSwapTest is SwapHelperTest {
     function setUp_swapHelper() public override returns (address) {
         token0 = DAI;
         token1 = CBBTC;
-        //bytes memory path = abi.encodePacked(DAI, uint24(100), USDC, uint24(3000), CBBTC);
         UniswapV3Helper swapHelper = new UniswapV3Helper(router);
         swapHelper.initialize(DAI_USDC_POOL, USDC_CBBTC_POOL);
         return address(swapHelper);
@@ -66,37 +65,37 @@ contract DaiCbBtcSwapTest is SwapHelperTest {
 
     function token0AmountToUsd(uint256 token0Amount) public virtual override returns (uint256 usdAmount) {
         IAggregator priceFeed = token0 == DAI ? daiAggregator : btcAggregator;
-        uint256 latestAnswer = uint256(priceFeed.latestAnswer());
+        (, int256 latestAnswer,,,) = priceFeed.latestRoundData();
         uint8 token0Decimals = IERC20Metadata(token0).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
-        usdAmount = token0Amount.mulDiv(latestAnswer, 10 ** priceFeedDecimals);
+        usdAmount = token0Amount.mulDiv(uint256(latestAnswer), 10 ** priceFeedDecimals);
         usdAmount = usdAmount.mulDiv(1e18, 10 ** token0Decimals);
     }
 
     function token1AmountToUsd(uint256 token1Amount) public virtual override returns (uint256 usdAmount) {
         IAggregator priceFeed = token1 == DAI ? daiAggregator : btcAggregator;
-        uint256 latestAnswer = uint256(priceFeed.latestAnswer());
+        (, int256 latestAnswer,,,) = priceFeed.latestRoundData();
         uint8 token1Decimals = IERC20Metadata(token1).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
-        usdAmount = token1Amount.mulDiv(latestAnswer, 10 ** priceFeedDecimals);
+        usdAmount = token1Amount.mulDiv(uint256(latestAnswer), 10 ** priceFeedDecimals);
         usdAmount = usdAmount.mulDiv(1e18, 10 ** token1Decimals);
     }
 
     function usdAmountToToken0(uint256 usdAmount) public virtual override returns (uint256 token0Amount) {
         IAggregator priceFeed = token0 == DAI ? daiAggregator : btcAggregator;
-        uint256 latestAnswer = uint256(priceFeed.latestAnswer());
+        (, int256 latestAnswer,,,) = priceFeed.latestRoundData();
         uint8 token0Decimals = IERC20Metadata(token0).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
-        token0Amount = usdAmount.mulDiv(10 ** priceFeedDecimals, latestAnswer);
+        token0Amount = usdAmount.mulDiv(10 ** priceFeedDecimals, uint256(latestAnswer));
         token0Amount = token0Amount.mulDiv(10 ** token0Decimals, 1e18);
     }
 
     function usdAmountToToken1(uint256 usdAmount) public virtual override returns (uint256 token1Amount) {
         IAggregator priceFeed = token1 == DAI ? daiAggregator : btcAggregator;
-        uint256 latestAnswer = uint256(priceFeed.latestAnswer());
+        (, int256 latestAnswer,,,) = priceFeed.latestRoundData();
         uint8 token1Decimals = IERC20Metadata(token1).decimals();
         uint8 priceFeedDecimals = priceFeed.decimals();
-        token1Amount = usdAmount.mulDiv(10 ** priceFeedDecimals, latestAnswer);
+        token1Amount = usdAmount.mulDiv(10 ** priceFeedDecimals, uint256(latestAnswer));
         token1Amount = token1Amount.mulDiv(10 ** token1Decimals, 1e18);
     }
 }

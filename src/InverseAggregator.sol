@@ -12,11 +12,31 @@ contract InverseAggregator is IAggregator {
         decimals = priceFeed.decimals();
     }
 
-    function latestAnswer() external view override returns (int256) {
-        return int256(10 ** decimals) / (priceFeed.latestAnswer() * int256(10 ** decimals));
+    function latestRoundData()
+        external
+        view
+        override
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
+        roundId = 0;
+        startedAt = 0;
+        answeredInRound = 0;
+        (, int256 originAnswer,, uint256 originUpdatedAt,) = priceFeed.latestRoundData();
+        answer = int256(10 ** decimals) / (originAnswer * int256(10 ** decimals));
+        updatedAt = originUpdatedAt;
     }
 
-    function latestTimestamp() external view override returns (uint256) {
-        return priceFeed.latestTimestamp();
+    /* solhint-disable */
+    function description() external pure override returns (string memory) {
+        revert("not implemented");
     }
+
+    function version() external pure override returns (uint256) {
+        revert("not implementd");
+    }
+
+    function getRoundData(uint80) external pure override returns (uint80, int256, uint256, uint256, uint80) {
+        revert("not implemented");
+    }
+    /* solhint-enable */
 }
